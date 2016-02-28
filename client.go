@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// Client represents one Server-Sent Events connection.
 type Client struct {
 	eventC  chan Event
 	closeC  chan bool
@@ -13,6 +14,13 @@ type Client struct {
 	w       http.ResponseWriter
 }
 
+// ClientInit initialises an HTTP connection for Server-Sent Events.
+//
+// ClientInit first checks that data streaming is supported on the connection.
+// ClientInit then sets the appropriate HTTP headers for Server-Sent Events.
+// Finaly ClientInit returns a Client that can later be run and have events sent too.
+//
+// Headers: Content-Type=text/event-stream, Cache-Control=no-cache, Connection=keep-alive.
 func ClientInit(w http.ResponseWriter) (*Client, error) {
 	// Make sure that the writer supports flushing.
 	if _, ok := w.(http.Flusher); !ok {
@@ -46,6 +54,8 @@ func ClientInit(w http.ResponseWriter) (*Client, error) {
 	return client, nil
 }
 
+// Run waits for, and then writes events.
+// Run will only exit once the connection is closed either by the browser or by running client.Close().
 func (client *Client) Run() {
 	client.running = true
 
@@ -85,16 +95,21 @@ func streamData(w http.ResponseWriter, data ...interface{}) {
 	w.(http.Flusher).Flush()
 }
 
+// Send an event to the client.
+// Send will only exit once the event has been sent.
 func (client *Client) Send(event Event) {
 	client.eventC <- event
 }
 
+// Close the connection.
+// Close will only exit once the connection is fully closed.
 func (client *Client) Close() {
 	client.closeC <- true
 	// Wait until close has completed
 	<-client.closeC
 }
 
+// Running will return whether or not the Client is currently accepting and writing events.
 func (client *Client) Running() bool {
 	return client.running
 }
