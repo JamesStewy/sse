@@ -47,7 +47,7 @@ func ClientInit(w http.ResponseWriter) (*Client, error) {
 }
 
 func (client *Client) Run() {
-	client.running = true // Change client run status
+	client.running = true
 
 	// Send open event
 	go client.Send(Msg{
@@ -73,7 +73,9 @@ loop:
 		}
 	}
 
-	client.running = false // Change client run status
+	client.running = false
+	// Send close message back to indicate close completion
+	client.closeC <- true
 }
 
 func streamData(w http.ResponseWriter, data ...interface{}) {
@@ -89,6 +91,8 @@ func (client *Client) Send(event Event) {
 
 func (client *Client) Close() {
 	client.closeC <- true
+	// Wait until close has completed
+	<-client.closeC
 }
 
 func (client *Client) Running() bool {
