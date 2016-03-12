@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // Client represents one Server-Sent Events connection.
@@ -16,12 +17,15 @@ type Client struct {
 
 // ClientInit initialises an HTTP connection for Server-Sent Events.
 //
+// Timeout is how long the connection will stay open for.
+// Set timeout to 0 to keep the connection open indefinitely.
+//
 // ClientInit first checks that data streaming is supported on the connection.
 // ClientInit then sets the appropriate HTTP headers for Server-Sent Events.
 // Finaly ClientInit returns a Client that can later be run and have events sent too.
 //
 // Headers: Content-Type=text/event-stream, Cache-Control=no-cache, Connection=keep-alive.
-func ClientInit(w http.ResponseWriter) (*Client, error) {
+func ClientInit(w http.ResponseWriter, timeout time.Duration) (*Client, error) {
 	// Make sure that the writer supports flushing.
 	if _, ok := w.(http.Flusher); !ok {
 		return nil, errors.New("Streaming unsupported")
@@ -49,6 +53,14 @@ func ClientInit(w http.ResponseWriter) (*Client, error) {
 		}()
 	} else {
 		return nil, errors.New("Unable to start close handler")
+	}
+
+	if timeout > time.Duration(0) {
+		go func() {
+			// Close connection after timeout duration
+			<-time.After(timeout)
+			client.Close()
+		}()
 	}
 
 	return client, nil
