@@ -63,7 +63,9 @@ This example binds the root of localhost:8080 to a Server-Sent Event stream that
 */
 package sse
 
-import ()
+import (
+	"strings"
+)
 
 // Event represents a single event that can be sent to a SSE Client.
 type Event interface {
@@ -80,10 +82,11 @@ type Msg struct {
 	Event string
 
 	// The Data field is the payload of the message.
-	Data  string
+	// Can contain newline characters.
+	Data string
 
 	// The Id field sets the last event ID value in the EventSource object.
-	Id    string
+	Id string
 
 	Retry string
 }
@@ -93,16 +96,16 @@ type Msg struct {
 func (msg Msg) SSEEvent() string {
 	message := ""
 	if msg.Event != "" {
-		message += "event: " + msg.Event + "\n"
+		message += formatField("event", msg.Event, false)
 	}
 	if msg.Data != "" {
-		message += "data: " + msg.Data + "\n"
+		message += formatField("data", msg.Data, true)
 	}
 	if msg.Id != "" {
-		message += "id: " + msg.Id + "\n"
+		message += formatField("id", msg.Id, false)
 	}
 	if msg.Retry != "" {
-		message += "retry: " + msg.Retry + "\n"
+		message += formatField("retry", msg.Retry, false)
 	}
 	return message + "\n"
 }
@@ -113,5 +116,17 @@ type Comment string
 
 // Convert the comment into a Server-Sent Event formatted string that can be written to a connection.
 func (comment Comment) SSEEvent() string {
-	return ": " + string(comment) + "\n\n"
+	return formatField("", string(comment), true) + "\n"
+}
+
+// Formats a Server-Sent Event field.
+func formatField(field, data string, multiline bool) string {
+	newline_start := field + ": "
+	newline_replace := ""
+
+	if multiline {
+		newline_replace = "\n" + newline_start
+	}
+
+	return newline_start + strings.Replace(data, "\n", newline_replace, -1) + "\n"
 }
