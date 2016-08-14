@@ -44,7 +44,7 @@ This example binds the root of localhost:8080 to a Server-Sent Event stream that
 
 	func eventHandler(w http.ResponseWriter, req *http.Request) {
 		// Initialise (REQUIRED)
-		client, err := sse.ClientInit(w)
+		client, err := sse.ClientInit(w, 0)
 
 		// Return error if unable to initialise Server-Sent Events
 		if err != nil {
