@@ -44,7 +44,7 @@ This example binds the root of localhost:8080 to a Server-Sent Event stream that
 
 	func eventHandler(w http.ResponseWriter, req *http.Request) {
 		// Initialise (REQUIRED)
-		client, err := sse.ClientInit(w, 0)
+		client, err := sse.ClientInit(w)
 
 		// Return error if unable to initialise Server-Sent Events
 		if err != nil {
@@ -58,8 +58,12 @@ This example binds the root of localhost:8080 to a Server-Sent Event stream that
 		defer delete(clients, client)
 
 		// Run Client (REQUIRED)
-		client.Run()
+		client.Run(r.Context())
 	}
+
+Caution
+
+This package uses an http.CloseNotifier, see: https://github.com/golang/go/issues/13165.
 */
 package sse
 
